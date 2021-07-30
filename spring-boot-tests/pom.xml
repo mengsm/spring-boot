@@ -18,6 +18,7 @@
 	<modules>
 		<!-- Deployment tests are slow so don't include by default -->
 		<module>spring-boot-integration-tests</module>
+		<module>spring-boot-mengsu-tests</module>
 	</modules>
 	<profiles>
 		<!-- M2E profile to allow easy import into Eclipse -->
