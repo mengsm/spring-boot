@@ -195,7 +195,7 @@ public class SpringApplication {
 	private static final Log logger = LogFactory.getLog(SpringApplication.class);
 
 	/**
-	 * 主要的 Java Config 类的数组
+	 * 主要的 Java Config 类的数组.
 	 */
 	private Set<Class<?>> primarySources;
 
@@ -214,7 +214,7 @@ public class SpringApplication {
 	private Banner banner;
 
 	/**
-	 * 资源加载器
+	 * 资源加载器.
 	 */
 	private ResourceLoader resourceLoader;
 
@@ -225,7 +225,7 @@ public class SpringApplication {
 	private Class<? extends ConfigurableApplicationContext> applicationContextClass;
 
 	/**
-	 * Web 应用类型
+	 * Web 应用类型.
 	 */
 	private WebApplicationType webApplicationType;
 
@@ -234,12 +234,12 @@ public class SpringApplication {
 	private boolean registerShutdownHook = true;
 
 	/**
-	 * ApplicationContextInitializer 数组
+	 * ApplicationContextInitializer 数组.
 	 */
 	private List<ApplicationContextInitializer<?>> initializers;
 
 	/**
-	 * ApplicationListener 数组
+	 * ApplicationListener 数组.
 	 */
 	private List<ApplicationListener<?>> listeners;
 
@@ -309,40 +309,58 @@ public class SpringApplication {
 	 * @return a running {@link ApplicationContext}
 	 */
 	public ConfigurableApplicationContext run(String... args) {
+		// <1> 创建 StopWatch 对象，并启动。StopWatch 主要用于简单统计 run 启动过程的时长。
 		StopWatch stopWatch = new StopWatch();
 		stopWatch.start();
 		ConfigurableApplicationContext context = null;
 		Collection<SpringBootExceptionReporter> exceptionReporters = new ArrayList<>();
+		// <2> 配置 headless 属性
 		configureHeadlessProperty();
+		// <3> 获得 SpringApplicationRunListener 的数组，并启动监听
 		SpringApplicationRunListeners listeners = getRunListeners(args);
 		listeners.starting();
 		try {
+			// <4> 创建  ApplicationArguments 对象
 			ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
+			// <5> 加载属性配置。执行完成后，所有的 environment 的属性都会加载进来，包括 application.properties 和外部的属性配置。
 			ConfigurableEnvironment environment = prepareEnvironment(listeners, applicationArguments);
 			configureIgnoreBeanInfo(environment);
+			// <6> 打印 Spring Banner
 			Banner printedBanner = printBanner(environment);
+			// <7> 创建 Spring 容器。
 			context = createApplicationContext();
+			// <8> 异常报告器
 			exceptionReporters = getSpringFactoriesInstances(SpringBootExceptionReporter.class,
 					new Class[] { ConfigurableApplicationContext.class }, context);
+			// <8> 主要是调用所有初始化类的 initialize 方法
 			prepareContext(context, environment, listeners, applicationArguments, printedBanner);
+			// <9> 初始化 Spring 容器。
 			refreshContext(context);
+			// <10> 执行 Spring 容器的初始化的后置逻辑。默认实现为空。
 			afterRefresh(context, applicationArguments);
+			// <11> 停止 StopWatch 统计时长
 			stopWatch.stop();
+			// <12> 打印 Spring Boot 启动的时长日志。
 			if (this.logStartupInfo) {
 				new StartupInfoLogger(this.mainApplicationClass).logStarted(getApplicationLog(), stopWatch);
 			}
+			// <13> 通知 SpringApplicationRunListener 的数组，Spring 容器启动完成。
 			listeners.started(context);
+			// <14> 调用 ApplicationRunner 或者 CommandLineRunner 的运行方法。
 			callRunners(context, applicationArguments);
 		}
 		catch (Throwable ex) {
+			// <14.1> 如果发生异常，则进行处理，并抛出 IllegalStateException 异常
 			handleRunFailure(context, ex, exceptionReporters, listeners);
 			throw new IllegalStateException(ex);
 		}
 
+		// <15> 通知 SpringApplicationRunListener 的数组，Spring 容器运行中。
 		try {
 			listeners.running(context);
 		}
 		catch (Throwable ex) {
+			// <15.1> 如果发生异常，则进行处理，并抛出 IllegalStateException 异常
 			handleRunFailure(context, ex, exceptionReporters, null);
 			throw new IllegalStateException(ex);
 		}
@@ -377,16 +395,22 @@ public class SpringApplication {
 	}
 
 	private void prepareContext(ConfigurableApplicationContext context, ConfigurableEnvironment environment,
-			SpringApplicationRunListeners listeners, ApplicationArguments applicationArguments, Banner printedBanner) {
+								SpringApplicationRunListeners listeners, ApplicationArguments applicationArguments, Banner printedBanner) {
+		// <1> 设置 context 的 environment 属性
 		context.setEnvironment(environment);
+		// <2> 设置 context 的一些属性
 		postProcessApplicationContext(context);
+		// <3> 初始化 ApplicationContextInitializer
 		applyInitializers(context);
+		// <4> 通知 SpringApplicationRunListener 的数组，Spring 容器准备完成。
 		listeners.contextPrepared(context);
+		// <5> 打印日志
 		if (this.logStartupInfo) {
 			logStartupInfo(context.getParent() == null);
 			logStartupProfileInfo(context);
 		}
 		// Add boot specific singleton beans
+		// <6> 设置 beanFactory 的属性
 		ConfigurableListableBeanFactory beanFactory = context.getBeanFactory();
 		beanFactory.registerSingleton("springApplicationArguments", applicationArguments);
 		if (printedBanner != null) {
@@ -397,9 +421,11 @@ public class SpringApplication {
 					.setAllowBeanDefinitionOverriding(this.allowBeanDefinitionOverriding);
 		}
 		// Load the sources
+		// <7> 加载 BeanDefinition 们
 		Set<Object> sources = getAllSources();
 		Assert.notEmpty(sources, "Sources must not be empty");
 		load(context, sources.toArray(new Object[0]));
+		// <8> 通知 SpringApplicationRunListener 的数组，Spring 容器加载完成。
 		listeners.contextLoaded(context);
 	}
 

@@ -1,8 +1,6 @@
 package site.mengsu.config;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import site.mengsu.service.UserService;
 
 /**
  * @Author: fengjian
@@ -12,8 +10,8 @@ import site.mengsu.service.UserService;
 @Configuration
 public class MyConfig {
 
-	@Bean
-	public UserService getUserService() {
-		return new UserService();
-	}
+//	@Bean
+//	public UserService getUserService() {
+//		return new UserService();
+//	}
 }
